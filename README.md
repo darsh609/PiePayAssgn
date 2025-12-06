@@ -41,8 +41,8 @@ npm install
 Create a `./.env` file:
 
 ```
-PORT=4000
-MONGO_URI=mongodb://localhost:27017/offerdb
+PORT=5000
+MONGO_URI=mongodb+srv://darshkumar0609_db_user:NUvvlxI71kKrRxNQ@cluster0.sz0h28s.mongodb.net/
 ```
 
 ---
@@ -72,7 +72,7 @@ npm start
 ```
 
 Server will run on:
-👉 `http://localhost:4000`
+👉 `http://localhost:5000`
 
 > **No migrations required.**
 > Database collections are auto-created via Mongoose.
@@ -100,7 +100,7 @@ Extracts and stores all offers from Flipkart’s offer API raw response.
 ```json
 {
   "noOfOffersIdentified": 12,
-  "noOfNewOffersCreated": 9
+  "noOfNewOffersCreated": 12
 }
 ```
 
