@@ -151,7 +151,9 @@ function parseSingleOffer(o) {
   const isOnce = /Once Per User|Once per user|once per user/i.test(description + " " + offerText);
 
   const providerBanks = (o.provider || []).map(p => String(p || "").trim()).filter(Boolean);
-  const paymentInstruments = detectInstruments(o); // array
+  const paymentInstruments = detectInstruments(o)
+  .map(i => String(i).toUpperCase().trim());
+// array
 
   return {
     flipkartOfferId: id,

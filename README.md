@@ -1,292 +1,387 @@
-# PiePayAssgn
-Sure bro — I’ll create a **clean, production-quality README.md** for your project based on everything you’ve built:
 
-* Offer scraping + parsing
-* MongoDB storage
-* Highest-discount API
-* Normalised schema
-* RegEx bank matching
-* Discount calculation logic
+# 🛒 **Flipkart Offer Extraction & Discount Engine — Backend Service**
 
-Here is the full **README.md**.
-Just copy-paste it into your repository root as `README.md`.
+> **A lightweight Node.js service that parses Flipkart’s offer API, stores structured offers, and computes the highest applicable discount for a user based on bank + payment instrument.**
 
 ---
 
-# 📦 Flipkart Offer Engine — Backend
+## 📜 **Table of Contents**
 
-A Node.js + Express + MongoDB service that **fetches Flipkart bank/UPI offers**, **parses them into structured fields**, **stores them**, and exposes an API to return the **highest discount** applicable for a user’s payment method.
+* [🚀 Project Setup](#-project-setup)
+* [🧩 API Endpoints](#-api-endpoints)
+* [📌 Assumptions](#-assumptions)
+* [🏗 Design Choices](#-design-choices)
+* [⚡ Scaling Strategy — 1000 RPS](#-scaling-strategy--1000-rps)
+* [🚀 Future Improvements](#-future-improvements)
+* [📘 Disclaimer](#-disclaimer)
 
-This project solves the challenge of parsing messy Flipkart text offers like:
+---
 
-```
-10% Instant Discount up to ₹1,000 on SBI Credit Cards on orders of ₹4,990 and above
-```
+# 🚀 **Project Setup**
 
-and turning them into structured JSON like:
+### **1️⃣ Clone the project**
 
-```json
-{
-  "providerBanks": ["SBI"],
-  "paymentInstruments": ["CREDIT"],
-  "discountType": "PERCENT",
-  "percentage": 10,
-  "maxDiscount": 1000,
-  "minOrderValue": 4990
-}
+```bash
+git clone <your-repo-url>
+cd flipkart-offer-service
 ```
 
 ---
 
-# 🚀 Tech Stack
-
-* **Node.js**
-* **Express**
-* **MongoDB + Mongoose**
-* **Cheerio** (for scraping)
-* **RegEx-based parsing logic**
-
----
-
-# ✨ Features
-
-### ✔ Scrapes Flipkart offer banners dynamically
-
-### ✔ Parses offer texts into structured numeric fields
-
-### ✔ Stores offers safely in MongoDB
-
-### ✔ Matches bank names using substring search (`AXIS` → `FLIPKARTAXISBANK`)
-
-### ✔ Calculates the best discount using business rules:
-
-* Supports **FLAT**, **PERCENT**, **CASHBACK**, **UNKNOWN**
-* Applies **maxDiscount caps**
-* Validates **minOrderValue**
-* Normalizes commas (“1,900,000”)
-
-### ✔ Returns guaranteed highest discount
-
----
-
-# 📁 Project Structure
-
-```
-/controllers
-    scrape.controller.js
-    discount.controller.js
-/models
-    offer.model.js
-/utils
-    parseFlipkartOffer.js
-routes.js
-server.js
-README.md
-```
-
----
-
-# 🧩 Offer Schema
-
-Your final schema stores offers in a powerful, calculation-friendly format:
-
-```js
-{
-  offerText: String,
-
-  providerBanks: [String],         // ["SBI", "ICICI"]
-  paymentInstruments: [String],     // ["CREDIT", "DEBIT", "UPI"]
-
-  discountType: String,             // "PERCENT", "FLAT", "CASHBACK", "UNKNOWN"
-
-  percentage: Number,               // if PERCENT
-  flatAmount: Number,               // if FLAT or cashback
-  maxDiscount: Number,              // cap for percentage offers
-
-  minOrderValue: Number,            // offer eligibility condition
-}
-```
-
----
-
-# 🔍 API Endpoints
-
-## 1️⃣ Fetch + Save Offers
-
-```
-GET /scrape-offers
-```
-
-* Fetches offers from Flipkart homepage
-* Parses them
-* Saves into MongoDB
-
----
-
-## 2️⃣ Highest Discount API
-
-```
-GET /highest-discount?amountToPay=10000&bankName=AXIS&paymentInstrument=CREDIT
-```
-
-### Query Parameters
-
-| Name                | Type   | Required | Description                  |
-| ------------------- | ------ | -------- | ---------------------------- |
-| `amountToPay`       | number | ✔        | Final order amount           |
-| `bankName`          | string | ✔        | Bank name (AXIS, SBI, IDFC…) |
-| `paymentInstrument` | string | ✖        | CREDIT / DEBIT / UPI         |
-
-### Example Request
-
-```
-GET /highest-discount?amountToPay=10000&bankName=AXIS&paymentInstrument=CREDIT
-```
-
-### Example Response
-
-```json
-{
-  "highestDiscountAmount": 500
-}
-```
-
----
-
-# 🧠 How Discount Is Calculated
-
-### If `%` type
-
-```
-discount = amountToPay * (percentage / 100)
-if (maxDiscount exists) discount = min(discount, maxDiscount)
-```
-
-### If `FLAT` or `CASHBACK`
-
-```
-discount = flatAmount
-```
-
-### If `UNKNOWN`
-
-Use:
-
-1. flatAmount
-2. or fallback to `value` if older offers exist
-
-### If `minOrderValue` present
-
-If order is below required value → discount = 0
-
----
-
-# 🎯 Bank Matching Logic
-
-Flipkart sometimes writes provider names weirdly:
-
-* `FLIPKARTAXISBANK`
-* `FlipkartAxis`
-* `axis exclusive offer`
-* `Get ₹500 Off with Axis`
-
-To solve this, matching uses:
-
-```js
-providerBanks: { $elemMatch: { $regex: /AXIS/i } }
-```
-
-So **AXIS matches anything containing “axis”**.
-
----
-
-# 🧪 Example SBI Test Case
-
-Your DB contains:
-
-### Offer 1
-
-10% up to 1000
-
-### Offer 2
-
-10% up to 750
-
-### Query:
-
-```
-GET /highest-discount?amountToPay=1900000&bankName=SBI&paymentInstrument=CREDIT
-```
-
-### Calculation:
-
-* Offer 1 → min(1,900,000 × 10%, 1000) = **1000**
-* Offer 2 → min(1,900,000 × 10%, 750) = **750**
-
-### Final Response:
-
-```json
-{ "highestDiscountAmount": 1000 }
-```
-
----
-
-# ▶ Run Locally
-
-### Install dependencies
+### **2️⃣ Install dependencies**
 
 ```bash
 npm install
 ```
 
-### Set environment variables
+---
 
-Create `.env`:
+### **3️⃣ Environment setup**
+
+Create a `./.env` file:
 
 ```
-MONGO_URI=mongodb+srv://...
-PORT=5000
+PORT=4000
+MONGO_URI=mongodb://localhost:27017/offerdb
 ```
 
-### Start server
+---
+
+### **4️⃣ Start MongoDB**
+
+(on your system or via Docker)
+
+**Local MongoDB**
+
+```bash
+mongod
+```
+
+**Or using Docker**
+
+```bash
+docker run -d -p 27017:27017 mongo
+```
+
+---
+
+### **5️⃣ Start the server**
 
 ```bash
 npm start
 ```
 
----
+Server will run on:
+👉 `http://localhost:4000`
 
-# 🛠 Development Notes
-
-* All offer text inconsistencies are handled using smart RegEx parsing
-* Scraper is idempotent — avoids duplicate saves
-* Discount calculation is multi-rule and future-proof
-* Supports commas in amounts (`1,900,000` → 1900000)
+> **No migrations required.**
+> Database collections are auto-created via Mongoose.
 
 ---
 
-# 🤝 Contribution
-
-You can easily extend:
-
-* More bank matching rules
-* Additional discount types
-* Coupon logic
-* User-specific dynamic offers
+# 🧩 **API Endpoints**
 
 ---
 
-# 📜 License
+## **1️⃣ POST /offer**
 
-MIT License.
+Extracts and stores all offers from Flipkart’s offer API raw response.
+
+### **Request Body**
+
+```json
+{
+  "flipkartOfferApiResponse": { ... }
+}
+```
+
+### **Response**
+
+```json
+{
+  "noOfOffersIdentified": 12,
+  "noOfNewOffersCreated": 9
+}
+```
 
 ---
 
-If you want, I can also generate:
+## **2️⃣ GET /highest-discount**
 
-✅ A POSTMAN collection
-✅ API documentation in Swagger format
-✅ A sample `.env.example`
-✅ A diagram of offer parsing flow
+Compute the **maximum discount** for the given bank & payment instrument.
 
-Just ask bro.
+### **Query Params**
+
+| Param             | Type   | Required | Example |
+| ----------------- | ------ | -------- | ------- |
+| amountToPay       | number | Yes      | 10000   |
+| bankName          | string | Yes      | AXIS    |
+| paymentInstrument | string | No       | CREDIT  |
+
+---
+
+### **Example Request**
+
+```
+GET /highest-discount?amountToPay=15000&bankName=AXIS&paymentInstrument=CREDIT
+```
+
+### **Example Response**
+
+```json
+{
+  "highestDiscountAmount": 1500
+}
+```
+
+---
+
+# 📌 **Assumptions**
+
+To complete the assignment within the required time, the following assumptions were made:
+
+### **1. Flipkart’s offer API structure is stable**
+
+The shape of:
+
+```
+paymentOptions.items → OFFER_LIST → data.offers.offerList
+```
+
+is consistent enough to parse.
+
+---
+
+### **2. Payment instruments are inferred**
+
+Flipkart does NOT explicitly provide:
+
+```
+CREDIT, EMI_OPTIONS, DEBIT, UPI
+```
+
+So instruments are derived based on:
+
+* Provider names
+* Offer text
+* Keywords like “EMI”, “No Cost EMI”, “Debit Card”
+
+---
+
+### **3. Bank matching uses substring logic**
+
+Flipkart provides bank identifiers like:
+
+```
+FLIPKARTAXISBANK
+FLIPKARTSBI
+BAJAJFINSERV
+```
+
+Therefore:
+
+* User input `"AXIS"` matches `"FLIPKARTAXISBANK"`
+* Case-insensitive & substring-based matching
+
+---
+
+### **4. Discount rules interpreted from text**
+
+Due to unstructured text, discount extraction uses regexes to identify:
+
+* Flat discounts (`₹500 off`)
+* Percent discounts (`10% up to ₹1500`)
+* Min order values (`Min Order ₹9999`)
+* EMI tenure (`12 months`)
+
+---
+
+### **5. If offer is ambiguous → discount = 0**
+
+Safety fallback to avoid incorrect calculations.
+
+---
+
+# 🏗 **Design Choices**
+
+### **1. Node.js + Express**
+
+* Minimal boilerplate
+* Fast JSON handling
+* Ideal for lightweight REST microservices
+
+---
+
+### **2. MongoDB + Mongoose**
+
+Chosen because:
+
+* Flipkart data is semi-structured
+* Offers vary significantly in structure
+* No schema migration overhead
+* Nested JSON works naturally
+
+---
+
+### **3. Schema optimized for querying**
+
+Fields are normalized such as:
+
+```
+percentage
+flatAmount
+maxDiscount
+minOrderValue
+paymentInstruments
+providerBanks
+```
+
+This allows fast filtering for:
+
+* Bank name
+* Payment instrument
+* Discount logic
+
+---
+
+### **4. Parsing built via regex**
+
+Text-based offers require heuristic extraction; regex gives:
+
+* High accuracy
+* Zero dependencies
+* Fast execution
+* Easy debugging
+
+---
+
+# ⚡ **Scaling Strategy — 1000 Requests/Second**
+
+To handle **1,000 RPS** for `/highest-discount`, the scaling plan includes:
+
+---
+
+## **1. Add MongoDB Indexes**
+
+```js
+db.offers.createIndex({ providerBanks: 1 });
+db.offers.createIndex({ paymentInstruments: 1 });
+```
+
+Speeds up lookup by >90%.
+
+---
+
+## **2. Introduce Redis Caching**
+
+Cache key:
+
+```
+highest:<bank>:<instrument>:<amount>
+```
+
+* 10–30 min TTL
+* Eliminates repeated DB queries
+* Reduces load dramatically for frequently queried banks like SBI, HDFC, AXIS
+
+---
+
+## **3. Horizontal Scaling**
+
+Using PM2 cluster mode:
+
+```
+pm2 start server.js -i max
+```
+
+Behind:
+
+* NGINX
+* AWS ALB
+* Cloud Run autopilot
+
+---
+
+## **4. Preloading Offers In-Memory**
+
+Distributed cache (Redis) + warmup on boot:
+
+* Load all offers once
+* Filter in-memory
+* DB is bypassed entirely during peak load
+
+---
+
+## **5. Lean Mongo Queries**
+
+Always `.lean()`:
+
+```js
+Offer.find(query).lean()
+```
+
+Removes Mongoose overhead → 20–30% faster.
+
+---
+
+# 🚀 **Future Improvements**
+
+If more time were available, I would implement:
+
+---
+
+### **1. Improve NLP-based Parsing**
+
+Handle complex text like:
+
+* “Valid only on Weekends”
+* “Once per user”
+* “Only on select product categories”
+
+---
+
+### **2. Full TypeScript Migration**
+
+Benefits:
+
+* Predictable types
+* Fewer parsing bugs
+* Cleaner interfaces
+
+---
+
+### **3. Admin Dashboard**
+
+A small UI to:
+
+* View parsed offers
+* Edit incorrect values
+* Trigger re-parsing
+
+---
+
+### **4. Background Scheduler**
+
+Auto-refresh Flipkart offers via cron:
+
+* Hourly updates
+* Deduping logic
+* Auto-clean older offers
+
+---
+
+### **5. Advanced caching & observability**
+
+* Redis cluster
+* Prometheus metrics
+* Grafana dashboards
+* Distributed tracing (OpenTelemetry)
+
+---
+
+# 📘 **Disclaimer**
+
+> **This project uses Flipkart’s offer API *strictly for evaluation/assignment purposes*.**
+> It is NOT affiliated with, supported by, or endorsed by Flipkart in any way.
+
+
