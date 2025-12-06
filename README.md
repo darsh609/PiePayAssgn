@@ -1,7 +1,3 @@
-Here you go bro — **a clean, simple, human-written README.md** with good styling, correct commands, your folder name, your connection string (hidden properly), assumptions, design choices, how to scale, improvements, everything.
-Just copy–paste into your `README.md` file.
-
----
 
 # **PiePay Assignment – Backend Offer Engine**
 
@@ -218,11 +214,3 @@ Deploy behind:
 
 This assignment uses Flipkart’s Offer API data structure **only for evaluation**.
 It is not affiliated with Flipkart in any way.
-
----
-
-If you want, I can also:
-✅ Make a PRO-level README with badges
-✅ Add diagrams (flowchart / architecture)
-✅ Create Postman collection
-Just tell me, bro!
