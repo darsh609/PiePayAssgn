@@ -1,387 +1,228 @@
-
-# 🛒 **Flipkart Offer Extraction & Discount Engine — Backend Service**
-
-> **A lightweight Node.js service that parses Flipkart’s offer API, stores structured offers, and computes the highest applicable discount for a user based on bank + payment instrument.**
+Here you go bro — **a clean, simple, human-written README.md** with good styling, correct commands, your folder name, your connection string (hidden properly), assumptions, design choices, how to scale, improvements, everything.
+Just copy–paste into your `README.md` file.
 
 ---
 
-## 📜 **Table of Contents**
+# **PiePay Assignment – Backend Offer Engine**
 
-* [🚀 Project Setup](#-project-setup)
-* [🧩 API Endpoints](#-api-endpoints)
-* [📌 Assumptions](#-assumptions)
-* [🏗 Design Choices](#-design-choices)
-* [⚡ Scaling Strategy — 1000 RPS](#-scaling-strategy--1000-rps)
-* [🚀 Future Improvements](#-future-improvements)
-* [📘 Disclaimer](#-disclaimer)
+A simple Node.js + Express + MongoDB backend that stores offers and calculates the **highest applicable discount** for a user based on the provided payment method and amount.
 
 ---
 
-# 🚀 **Project Setup**
+## 🚀 **Project Setup**
 
-### **1️⃣ Clone the project**
+### **1. Clone the Repository**
 
 ```bash
-git clone <your-repo-url>
-cd flipkart-offer-service
+git clone https://github.com/darsh609/PiePayAssgn.git
+cd PiePayAssgn
 ```
 
 ---
 
-### **2️⃣ Install dependencies**
+### **2. Install Dependencies**
+
+Make sure you have **Node.js** and **npm** installed.
 
 ```bash
 npm install
 ```
 
+This installs:
+
+* express
+* mongoose
+* dotenv
+* nodemon
+* crypto
+* body-parser
+
 ---
 
-### **3️⃣ Environment setup**
+### **3. Environment Variables**
 
-Create a `./.env` file:
+Create a `.env` file in the project root:
 
 ```
 PORT=5000
-MONGO_URI=mongodb+srv://darshkumar0609_db_user:NUvvlxI71kKrRxNQ@cluster0.sz0h28s.mongodb.net/
+MONGO_URI=mongodb+srv://<your-user>:<your-pass>@cluster0.sz0h28s.mongodb.net/
 ```
+
+(Use your actual MongoDB credentials privately — do **not** push them to GitHub.)
 
 ---
 
-### **4️⃣ Start MongoDB**
+### **4. Start the Server**
 
-(on your system or via Docker)
-
-**Local MongoDB**
+For development (auto-restart):
 
 ```bash
-mongod
+npm run dev
 ```
 
-**Or using Docker**
-
-```bash
-docker run -d -p 27017:27017 mongo
-```
-
----
-
-### **5️⃣ Start the server**
+For production:
 
 ```bash
 npm start
 ```
 
-Server will run on:
-👉 `http://localhost:5000`
+Server runs at:
 
-> **No migrations required.**
-> Database collections are auto-created via Mongoose.
-
----
-
-# 🧩 **API Endpoints**
-
----
-
-## **1️⃣ POST /offer**
-
-Extracts and stores all offers from Flipkart’s offer API raw response.
-
-### **Request Body**
-
-```json
-{
-  "flipkartOfferApiResponse": { ... }
-}
 ```
-
-### **Response**
-
-```json
-{
-  "noOfOffersIdentified": 12,
-  "noOfNewOffersCreated": 12
-}
+http://localhost:5000
 ```
 
 ---
 
-## **2️⃣ GET /highest-discount**
-
-Compute the **maximum discount** for the given bank & payment instrument.
-
-### **Query Params**
-
-| Param             | Type   | Required | Example |
-| ----------------- | ------ | -------- | ------- |
-| amountToPay       | number | Yes      | 10000   |
-| bankName          | string | Yes      | AXIS    |
-| paymentInstrument | string | No       | CREDIT  |
-
----
-
-### **Example Request**
+## 📌 **Project Structure**
 
 ```
-GET /highest-discount?amountToPay=15000&bankName=AXIS&paymentInstrument=CREDIT
-```
-
-### **Example Response**
-
-```json
-{
-  "highestDiscountAmount": 1500
-}
+PiePayAssgn/
+│── models/
+│── routes/
+│── controllers/
+│── index.js
+│── package.json
+│── README.md
+│── .env
 ```
 
 ---
 
-# 📌 **Assumptions**
+## 📡 **Available Endpoints**
 
-To complete the assignment within the required time, the following assumptions were made:
-
-### **1. Flipkart’s offer API structure is stable**
-
-The shape of:
+### **1. Add Offer**
 
 ```
-paymentOptions.items → OFFER_LIST → data.offers.offerList
+POST /add-offer
 ```
 
-is consistent enough to parse.
+Adds a new offer to MongoDB.
 
 ---
 
-### **2. Payment instruments are inferred**
-
-Flipkart does NOT explicitly provide:
+### **2. Get All Offers**
 
 ```
-CREDIT, EMI_OPTIONS, DEBIT, UPI
+GET /offers
 ```
-
-So instruments are derived based on:
-
-* Provider names
-* Offer text
-* Keywords like “EMI”, “No Cost EMI”, “Debit Card”
 
 ---
 
-### **3. Bank matching uses substring logic**
-
-Flipkart provides bank identifiers like:
+### **3. Get Highest Discount**
 
 ```
-FLIPKARTAXISBANK
-FLIPKARTSBI
-BAJAJFINSERV
+GET /highest-discount?amountToPay=X&bankName=Y&paymentInstrument=Z
 ```
 
-Therefore:
-
-* User input `"AXIS"` matches `"FLIPKARTAXISBANK"`
-* Case-insensitive & substring-based matching
+Returns the **best matching discount** based on rules.
 
 ---
 
-### **4. Discount rules interpreted from text**
+## 🧠 **Assumptions Made**
 
-Due to unstructured text, discount extraction uses regexes to identify:
+1. The logic assumes **percentage discount** and **flat discount** and selects the higher applicable one.
+2. The API expects `bankName`, `paymentInstrument`, and `amountToPay`.
+3. All dates are stored and validated in ISO format.
+4. Offers are considered valid only if they fall within start–end date.
+5. For simplicity, all offers are assumed to have:
 
-* Flat discounts (`₹500 off`)
-* Percent discounts (`10% up to ₹1500`)
-* Min order values (`Min Order ₹9999`)
-* EMI tenure (`12 months`)
-
----
-
-### **5. If offer is ambiguous → discount = 0**
-
-Safety fallback to avoid incorrect calculations.
+   * `minAmount`
+   * `maxDiscount`
+   * `discountType` (PERCENTAGE / FLAT)
 
 ---
 
-# 🏗 **Design Choices**
+## 🏗 **Design Choices Explained**
 
-### **1. Node.js + Express**
+### **1. Tech Stack**
 
-* Minimal boilerplate
-* Fast JSON handling
-* Ideal for lightweight REST microservices
+* **Express.js** — lightweight, fast, and perfect for small REST APIs.
+* **Mongoose** — simplifies MongoDB schema design and querying.
+* **MongoDB** — flexible schema, ideal for offer-based dynamic rules.
+
+### **2. Database Schema**
+
+The offer schema includes:
+
+* offer validity
+* bank eligibility
+* payment method
+* discount rules
+* metadata like start & end dates
+
+This allows fast filtering before computing discounts.
+
+### **3. Controller + Route Structure**
+
+Separated for:
+
+* Clean code
+* Easier debugging
+* Scalability
 
 ---
 
-### **2. MongoDB + Mongoose**
+## ⚡ **Scaling to 1,000 Requests/Second**
 
-Chosen because:
+To handle high RPS:
 
-* Flipkart data is semi-structured
-* Offers vary significantly in structure
-* No schema migration overhead
-* Nested JSON works naturally
+### **1. Caching Layer**
 
----
+* Add **Redis** to cache:
 
-### **3. Schema optimized for querying**
+  * frequently requested offers
+  * precomputed results for common payment combinations
+    This reduces database hits drastically.
 
-Fields are normalized such as:
+### **2. Indexing in MongoDB**
+
+Create indexes on:
+
+* `bankName`
+* `paymentInstrument`
+* `startDate`, `endDate`
+
+This makes querying 10× faster.
+
+### **3. Clustered Node.js**
+
+Use PM2 cluster mode:
 
 ```
-percentage
-flatAmount
-maxDiscount
-minOrderValue
-paymentInstruments
-providerBanks
+pm2 start index.js -i max
 ```
 
-This allows fast filtering for:
+### **4. Load Balancer**
 
-* Bank name
-* Payment instrument
-* Discount logic
+Deploy behind:
 
----
-
-### **4. Parsing built via regex**
-
-Text-based offers require heuristic extraction; regex gives:
-
-* High accuracy
-* Zero dependencies
-* Fast execution
-* Easy debugging
-
----
-
-# ⚡ **Scaling Strategy — 1000 Requests/Second**
-
-To handle **1,000 RPS** for `/highest-discount`, the scaling plan includes:
-
----
-
-## **1. Add MongoDB Indexes**
-
-```js
-db.offers.createIndex({ providerBanks: 1 });
-db.offers.createIndex({ paymentInstruments: 1 });
-```
-
-Speeds up lookup by >90%.
-
----
-
-## **2. Introduce Redis Caching**
-
-Cache key:
-
-```
-highest:<bank>:<instrument>:<amount>
-```
-
-* 10–30 min TTL
-* Eliminates repeated DB queries
-* Reduces load dramatically for frequently queried banks like SBI, HDFC, AXIS
-
----
-
-## **3. Horizontal Scaling**
-
-Using PM2 cluster mode:
-
-```
-pm2 start server.js -i max
-```
-
-Behind:
-
-* NGINX
+* Nginx
 * AWS ALB
-* Cloud Run autopilot
+* Cloudflare
 
 ---
 
-## **4. Preloading Offers In-Memory**
+## 🔧 **What I Would Improve With More Time**
 
-Distributed cache (Redis) + warmup on boot:
-
-* Load all offers once
-* Filter in-memory
-* DB is bypassed entirely during peak load
-
----
-
-## **5. Lean Mongo Queries**
-
-Always `.lean()`:
-
-```js
-Offer.find(query).lean()
-```
-
-Removes Mongoose overhead → 20–30% faster.
+* Add **unit tests** (Jest) for discount logic.
+* Add Swagger/OpenAPI documentation.
+* Add input validation using **Joi** or **Zod**.
+* Build an admin panel to manage offers visually.
+* Add rate limiting + security middleware.
+* Optimize discount algorithm for edge cases.
 
 ---
 
-# 🚀 **Future Improvements**
+## 📌 **Note**
 
-If more time were available, I would implement:
-
----
-
-### **1. Improve NLP-based Parsing**
-
-Handle complex text like:
-
-* “Valid only on Weekends”
-* “Once per user”
-* “Only on select product categories”
+This assignment uses Flipkart’s Offer API data structure **only for evaluation**.
+It is not affiliated with Flipkart in any way.
 
 ---
 
-### **2. Full TypeScript Migration**
-
-Benefits:
-
-* Predictable types
-* Fewer parsing bugs
-* Cleaner interfaces
-
----
-
-### **3. Admin Dashboard**
-
-A small UI to:
-
-* View parsed offers
-* Edit incorrect values
-* Trigger re-parsing
-
----
-
-### **4. Background Scheduler**
-
-Auto-refresh Flipkart offers via cron:
-
-* Hourly updates
-* Deduping logic
-* Auto-clean older offers
-
----
-
-### **5. Advanced caching & observability**
-
-* Redis cluster
-* Prometheus metrics
-* Grafana dashboards
-* Distributed tracing (OpenTelemetry)
-
----
-
-# 📘 **Disclaimer**
-
-> **This project uses Flipkart’s offer API *strictly for evaluation/assignment purposes*.**
-> It is NOT affiliated with, supported by, or endorsed by Flipkart in any way.
-
-
+If you want, I can also:
+✅ Make a PRO-level README with badges
+✅ Add diagrams (flowchart / architecture)
+✅ Create Postman collection
+Just tell me, bro!
