@@ -41,7 +41,7 @@ Create a `.env` file in the project root:
 
 ```
 PORT=5000
-MONGO_URI=mongodb+srv://<your-user>:<your-pass>@cluster0.sz0h28s.mongodb.net/
+MONGO_URI=mongodb+srv://darshkumar0609_db_user:NUvvlxI71kKrRxNQ@cluster0.sz0h28s.mongodb.net/
 ```
 
 (Use your actual MongoDB credentials privately — do **not** push them to GitHub.)
@@ -90,22 +90,12 @@ PiePayAssgn/
 ### **1. Add Offer**
 
 ```
-POST /add-offer
+POST /offer
 ```
 
 Adds a new offer to MongoDB.
 
----
-
-### **2. Get All Offers**
-
-```
-GET /offers
-```
-
----
-
-### **3. Get Highest Discount**
+### **2. Get Highest Discount**
 
 ```
 GET /highest-discount?amountToPay=X&bankName=Y&paymentInstrument=Z
@@ -203,10 +193,18 @@ Deploy behind:
 
 * Add **unit tests** (Jest) for discount logic.
 * Add Swagger/OpenAPI documentation.
-* Add input validation using **Joi** or **Zod**.
 * Build an admin panel to manage offers visually.
 * Add rate limiting + security middleware.
 * Optimize discount algorithm for edge cases.
+* Add basic tests to check if discount calculations are always correct.
+* Improve error handling so the API gives cleaner messages instead of crashing.
+* Add input validation to prevent wrong or missing fields from breaking the API.
+* Make the code cleaner by separating more logic into helper files.
+* Add logging so it’s easier to debug what happened during a request.
+* Add API documentation so anyone can quickly understand how to use the endpoints.
+* Improve performance by caching repeated calculations.
+* Add simple security features like rate limiting and helmet middleware.
+* Add a small admin page to easily view and edit offers instead of using MongoDB manually.
 
 ---
 
