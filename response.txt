@@ -1,4 +1,8 @@
+//this is the response we need to paste in postman
+
+
 {
+
     "flipkartOfferApiResponse": {
          "paymentOptions": {
                     "items": [{
