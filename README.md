@@ -149,62 +149,75 @@ Separated for:
 
 ---
 
-## ⚡ **Scaling to 1,000 Requests/Second**
+## ⚡ Scaling to 1,000 Requests Per Second
 
-To handle high RPS:
+To make the `/highest-discount` API fast and scalable, here are simple improvements:
 
-### **1. Caching Layer**
+### 1. Add Caching (Redis)
+Store frequently requested discount results in Redis.  
+If the same request comes again, return the cached value instead of calculating again.  
+This reduces MongoDB load and improves speed.
 
-* Add **Redis** to cache:
+### 2. Add MongoDB Indexes
+Add indexes to fields commonly used in queries:
+- bankName
+- paymentInstrument
 
-  * frequently requested offers
-  * precomputed results for common payment combinations
-    This reduces database hits drastically.
+Indexes help MongoDB search faster without scanning the full collection.
 
-### **2. Indexing in MongoDB**
+### 3. Horizontal Scaling (Run Multiple Backend Servers)
+Run multiple instances of the Node.js server.  
+This lets the system handle more requests at the same time.
 
-Create indexes on:
+### 4. Use a Load Balancer
+Use Nginx, AWS ALB, or Cloudflare as a load balancer.  
+It distributes traffic evenly across all backend servers and prevents overload.
 
-* `bankName`
-* `paymentInstrument`
-* `startDate`, `endDate`
+### 5. Optimize Database Queries
+Keep database queries simple and efficient:
+- Query only required fields
+- Avoid unnecessary loops or heavy logic
+- Limit returned data to only what is required
 
-This makes querying 10× faster.
-
-### **3. Clustered Node.js**
-
-Use PM2 cluster mode:
-
-```
-pm2 start index.js -i max
-```
-
-### **4. Load Balancer**
-
-Deploy behind:
-
-* Nginx
-* AWS ALB
-* Cloudflare
+Less processing inside the server = faster API responses.
 
 ---
 
-## 🔧 **What I Would Improve With More Time**
+# 🔧 **What I Would Improve With More Time**
 
-* Add **unit tests** (Jest) for discount logic.
-* Add Swagger/OpenAPI documentation.
-* Build an admin panel to manage offers visually.
-* Add rate limiting + security middleware.
-* Optimize discount algorithm for edge cases.
-* Add basic tests to check if discount calculations are always correct.
-* Improve error handling so the API gives cleaner messages instead of crashing.
-* Add input validation to prevent wrong or missing fields from breaking the API.
-* Make the code cleaner by separating more logic into helper files.
-* Add logging so it’s easier to debug what happened during a request.
-* Add API documentation so anyone can quickly understand how to use the endpoints.
-* Improve performance by caching repeated calculations.
-* Add simple security features like rate limiting and helmet middleware.
-* Add a small admin page to easily view and edit offers instead of using MongoDB manually.
+If I had more time, I would add a few improvements to make the project more reliable, faster, and easier to work with:
+
+### ✅ **1. Add Basic Tests**
+
+* Write simple tests (using Jest) to check whether the discount calculation is always correct.
+* This helps catch mistakes early.
+
+### ✅ **2. Better Error Handling**
+
+* Make sure the API returns clean and clear error messages instead of crashing.
+* Helps users understand exactly what went wrong.
+
+### ✅ **3. Add Input Validation**
+
+* Use a validation library (like Joi/Zod) to ensure that important fields are not missing or incorrect.
+* Prevents invalid data from entering the system.
+
+### ✅ **4. Clean Up the Code Structure**
+
+* Move calculations and helper logic into separate utility files.
+* Makes the code easier to read and maintain.
+
+### ✅ **5. Improve Performance With Caching**
+
+* Cache repeated discount calculations to reduce load on MongoDB and speed up responses.
+
+### ✅ **6. Add Basic Security**
+
+* Add rate limiting and security middleware (like helmet) to prevent abuse.
+
+### ✅ **7. Create a Simple Admin Panel**
+
+* A small UI to view / edit / add offers without going to MongoDB directly.
 
 ---
 

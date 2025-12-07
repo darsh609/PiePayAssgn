@@ -39,6 +39,7 @@
 //     return match ? Number(match[1]) : 0;
 // }
 // src/utils/parseFlipkartOffers.js
+
 function toNumber(n) {
   if (n === undefined || n === null) return 0;
   return Number(String(n).replace(/[^0-9.-]+/g, "")) || 0;
@@ -94,6 +95,7 @@ function detectInstruments(offerObj) {
   } else {
     for (const p of providers) {
       if (/BAJAJFINSERV/i.test(p) || /BFL/i.test(p)) instr.add("EMI_OPTIONS");
+
       if (/AXIS|SBI|ICICI|HDFC|BOB|KOTAK|YESBANK|IDFC|CITI|AMEX|AMERICAN/i.test(p)) {
         // banks support card payments -> classify CREDIT by default
         instr.add("CREDIT");
@@ -126,15 +128,19 @@ function parseSingleOffer(o) {
   // parse numbers
   const flatFromOfferText = extractCurrencyNumber(offerText);
   const percentFromDesc = extractPercent(description) || extractPercent(offerText);
+
   const maxFromDesc = (() => {
     // detect "up to ₹X" in description / offerText
     const m = (description + " " + offerText).match(/up to\s*₹\s?([\d,]+)/i);
+    
     if (m) return Number(m[1].replace(/,/g, ""));
     // there may be "upto ₹50" (no space)
     const m2 = (description + " " + offerText).match(/upto\s*₹\s?([\d,]+)/i);
+
     if (m2) return Number(m2[1].replace(/,/g, ""));
     // If the offerText itself is "Save ₹1,000" that's the flat cap for percent offers
     if (percentFromDesc && flatFromOfferText) return flatFromOfferText;
+
     return 0;
   })();
 
@@ -151,6 +157,8 @@ function parseSingleOffer(o) {
   const isOnce = /Once Per User|Once per user|once per user/i.test(description + " " + offerText);
 
   const providerBanks = (o.provider || []).map(p => String(p || "").trim()).filter(Boolean);
+
+
   const paymentInstruments = detectInstruments(o)
   .map(i => String(i).toUpperCase().trim());
 // array

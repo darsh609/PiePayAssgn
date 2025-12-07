@@ -241,9 +241,11 @@ function calculateDiscountForOffer(offer, amountToPay) {
       discount = (amountToPay * pct) / 100;
       if (cap && cap > 0) discount = Math.min(discount, cap);
     }
-  } else if (dt === "FLAT" || dt === "CASHBACK") {
+  } 
+  else if (dt === "FLAT" || dt === "CASHBACK") {
     discount = flat;
-  } else {
+  } 
+  else {
     // fallback: prefer flatAmount, else try raw 'value' (older code)
     discount = flat || Number(offer.value || 0) || 0;
   }
