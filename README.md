@@ -187,35 +187,35 @@ Less processing inside the server = faster API responses.
 
 If I had more time, I would add a few improvements to make the project more reliable, faster, and easier to work with:
 
-### ✅ **1. Add Basic Tests**
+###  **1. Add Basic Tests**
 
 * Write simple tests (using Jest) to check whether the discount calculation is always correct.
 * This helps catch mistakes early.
 
-### ✅ **2. Better Error Handling**
+###  **2. Better Error Handling**
 
 * Make sure the API returns clean and clear error messages instead of crashing.
 * Helps users understand exactly what went wrong.
 
-### ✅ **3. Add Input Validation**
+###  **3. Add Input Validation**
 
 * Use a validation library (like Joi/Zod) to ensure that important fields are not missing or incorrect.
 * Prevents invalid data from entering the system.
 
-### ✅ **4. Clean Up the Code Structure**
+###  **4. Clean Up the Code Structure**
 
 * Move calculations and helper logic into separate utility files.
 * Makes the code easier to read and maintain.
 
-### ✅ **5. Improve Performance With Caching**
+###  **5. Improve Performance With Caching**
 
 * Cache repeated discount calculations to reduce load on MongoDB and speed up responses.
 
-### ✅ **6. Add Basic Security**
+###  **6. Add Basic Security**
 
 * Add rate limiting and security middleware (like helmet) to prevent abuse.
 
-### ✅ **7. Create a Simple Admin Panel**
+###  **7. Create a Simple Admin Panel**
 
 * A small UI to view / edit / add offers without going to MongoDB directly.
 
